@@ -41,5 +41,14 @@
       <artifactId>devon4j-test</artifactId>
       <scope>test</scope>
     </dependency>
+    
+    <!-- START:FIDO2 -->
+        <dependency>
+      <groupId>com.webauthn4j</groupId>
+      <artifactId>webauthn4j-core</artifactId>
+      <version>0.13.0.RELEASE</version>
+    </dependency>
+    <!-- END: FIDO2 -->
+    
   </dependencies>
 </project>
