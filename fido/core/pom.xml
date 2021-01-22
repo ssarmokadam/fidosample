@@ -1,4 +1,4 @@
-﻿﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -12,6 +12,12 @@
   <name>${project.artifactId}</name>
   <description>Core of the server for the fido application - a simple example based on devon4j.</description>
 
+ <!-- START:FIDO2 -->
+  <properties>
+    <webauthn4j-spring-security.version>0.7.0.RELEASE</webauthn4j-spring-security.version>
+  </properties>
+  <!-- END:FIDO2 -->
+  
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -183,6 +189,29 @@
         </exclusion>
       </exclusions>
     </dependency>
+    
+     <!-- START:FIDO2 -->
+    <dependency>
+      <groupId>com.webauthn4j</groupId>
+      <artifactId>webauthn4j-spring-security-core</artifactId>
+      <version>${webauthn4j-spring-security.version}</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.modelmapper</groupId>
+      <artifactId>modelmapper</artifactId>
+      <version>2.3.8</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-cbor</artifactId>
+      <version>2.11.3</version>
+    </dependency>
+
+    <!-- END:FIDO2 -->
   </dependencies>
 
   <profiles>
