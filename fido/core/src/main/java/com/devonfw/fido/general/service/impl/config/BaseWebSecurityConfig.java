@@ -1,19 +1,15 @@
 package com.devonfw.fido.general.service.impl.config;
 
 import javax.inject.Inject;
-import javax.servlet.Filter;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
-import org.springframework.security.web.authentication.logout.LogoutFilter;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.session.SessionManagementFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -26,9 +22,6 @@ import com.devonfw.fido.general.service.impl.filter.SampleUsernameNotFoundHandle
 import com.devonfw.fido.general.util.AssertionOptionsProvider;
 import com.devonfw.fido.general.util.AttestationOptionsProvider;
 import com.devonfw.fido.usermanagement.logic.api.UserManager;
-import com.devonfw.module.security.common.impl.rest.AuthenticationSuccessHandlerSendingOkHttpStatusCode;
-import com.devonfw.module.security.common.impl.rest.JsonUsernamePasswordAuthenticationFilter;
-import com.devonfw.module.security.common.impl.rest.LogoutSuccessHandlerReturningOkHttpStatusCode;
 import com.webauthn4j.WebAuthnManager;
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.PublicKeyCredentialParameters;
@@ -120,32 +113,9 @@ public abstract class BaseWebSecurityConfig extends WebSecurityConfigurerAdapter
   @Override
   public void configure(HttpSecurity http) throws Exception {
 
-    // String[] unsecuredResources = new String[] { "/login", "/security/**", "/services/rest/login",
-    // "/services/rest/logout" };
-    //
-    // // disable CSRF protection by default, use csrf starter to override.
-    // http = http.csrf().disable();
-    // // load starters as pluggins.
-    // http = this.webSecurityConfigurer.configure(http);
-    //
-    // http
-    // //
-    // .userDetailsService(this.userDetailsService)
-    // // define all urls that are not to be secured
-    // .authorizeRequests().antMatchers(unsecuredResources).permitAll().anyRequest().authenticated().and()
-    // // configure parameters for simple form login (and logout)
-    // .formLogin().successHandler(new SimpleUrlAuthenticationSuccessHandler()).defaultSuccessUrl("/")
-    // .failureUrl("/login.html?error").loginProcessingUrl("/j_spring_security_login").usernameParameter("username")
-    // .passwordParameter("password").and()
-    // // logout via POST is possible
-    // .logout().logoutSuccessUrl("/login.html").and()
-    // // register login and logout filter that handles rest logins
-    // .addFilterAfter(getSimpleRestAuthenticationFilter(), BasicAuthenticationFilter.class)
-    // .addFilterAfter(getSimpleRestLogoutFilter(), LogoutFilter.class);
-    //
-    // if (this.corsEnabled) {
-    // http.addFilter(getCorsFilter());
-    // }
+    http.authorizeRequests().antMatchers("/").permitAll().antMatchers("/api/auth/status").permitAll()
+        .antMatchers(HttpMethod.GET, "/login").permitAll().antMatchers(HttpMethod.POST, "/api/profile").permitAll()
+        .antMatchers("/health/**").permitAll().and().formLogin();
 
     // WebAuthn Login
     http.apply(WebAuthnLoginConfigurer.webAuthnLogin()).attestationOptionsEndpoint().rp()
@@ -173,57 +143,6 @@ public abstract class BaseWebSecurityConfig extends WebSecurityConfigurerAdapter
     http.addFilterAfter(fidoServerAttestationResultEndpointFilter, SessionManagementFilter.class);
     http.addFilterAfter(fidoServerAssertionOptionsEndpointFilter, SessionManagementFilter.class);
     http.addFilterAfter(fidoServerAssertionResultEndpointFilter, SessionManagementFilter.class);
-
-    String[] unsecuredResources = new String[] { "/login", "/register" };
-    http.userDetailsService(this.userDetailsService).authorizeRequests().antMatchers("/resources/**").permitAll()
-        .antMatchers(unsecuredResources).permitAll().anyRequest().authenticated().and().csrf().disable().formLogin()
-        .loginPage("/login");
-  }
-
-  /**
-   * Create a simple filter that allows logout on a REST Url /services/rest/logout and returns a simple HTTP status 200
-   * ok.
-   *
-   * @return the filter.
-   */
-  protected Filter getSimpleRestLogoutFilter() {
-
-    LogoutFilter logoutFilter = new LogoutFilter(new LogoutSuccessHandlerReturningOkHttpStatusCode(),
-        new SecurityContextLogoutHandler());
-
-    // configure logout for rest logouts
-    logoutFilter.setLogoutRequestMatcher(new AntPathRequestMatcher("/services/rest/logout"));
-
-    return logoutFilter;
-  }
-
-  /**
-   * Create a simple authentication filter for REST logins that reads user-credentials from a json-parameter and returns
-   * status 200 instead of redirect after login.
-   *
-   * @return the {@link JsonUsernamePasswordAuthenticationFilter}.
-   * @throws Exception if something goes wrong.
-   */
-  protected JsonUsernamePasswordAuthenticationFilter getSimpleRestAuthenticationFilter() throws Exception {
-
-    JsonUsernamePasswordAuthenticationFilter jsonFilter = new JsonUsernamePasswordAuthenticationFilter(
-        new AntPathRequestMatcher("/services/rest/login"));
-    jsonFilter.setPasswordParameter("j_password");
-    jsonFilter.setUsernameParameter("j_username");
-    jsonFilter.setAuthenticationManager(authenticationManager());
-    // set failurehandler that uses no redirect in case of login failure; just HTTP-status: 401
-    jsonFilter.setAuthenticationManager(authenticationManagerBean());
-    jsonFilter.setAuthenticationFailureHandler(new SimpleUrlAuthenticationFailureHandler());
-    // set successhandler that uses no redirect in case of login success; just HTTP-status: 200
-    jsonFilter.setAuthenticationSuccessHandler(new AuthenticationSuccessHandlerSendingOkHttpStatusCode());
-    return jsonFilter;
-  }
-
-  @SuppressWarnings("javadoc")
-  @Inject
-  public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-
-    auth.inMemoryAuthentication().withUser("admin").password(this.passwordEncoder.encode("admin")).roles("Admin");
   }
 
 }
