@@ -1,0 +1,47 @@
+/*
+ * Copyright 2002-2019 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.devonfw.fido.general.service.impl.config;
+
+import org.springframework.security.core.Authentication;
+
+import com.devonfw.fido.usermanagement.dataaccess.api.UserEntity;
+import com.devonfw.fido.usermanagement.logic.api.UserManager;
+import com.webauthn4j.data.PublicKeyCredentialUserEntity;
+import com.webauthn4j.springframework.security.options.PublicKeyCredentialUserEntityProvider;
+
+public class PublicKeyCredentialUserEntityProviderImpl implements PublicKeyCredentialUserEntityProvider {
+
+  private UserManager userManager;
+
+  public PublicKeyCredentialUserEntityProviderImpl(UserManager userManager) {
+
+    this.userManager = userManager;
+  }
+
+  @Override
+  public PublicKeyCredentialUserEntity provide(Authentication authentication) {
+
+    if (authentication == null) {
+      return null;
+    }
+
+    String username = authentication.getName();
+    UserEntity userEntity = (UserEntity) this.userManager.loadUserByUsername(username);
+    return new PublicKeyCredentialUserEntity(userEntity.getUserHandle(), userEntity.getUsername(),
+        userEntity.getUsername());
+  }
+}
